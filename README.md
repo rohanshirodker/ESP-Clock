@@ -1,101 +1,122 @@
-# ESP8266 Matrix Clock with Web Config & OTA
+# 🕒 ESP8266 WiFi Matrix Clock
 
-A highly customizable, Wi-Fi connected digital clock using an ESP8266 (NodeMCU) and a MAX7219 LED Matrix. Features a "Slot Machine" animation for seconds, a built-in web interface for settings, and Over-The-Air (OTA) firmware updates via GitHub.
+A precise, internet-synchronized digital clock built with an **ESP8266 (NodeMCU)** and a **MAX7219 LED Dot Matrix** display. It features automatic time syncing via NTP, a web-based configuration portal, and Over-the-Air (OTA) updates.
 
-## 🌟 Features
+## ✨ Features
 
-* **Accurate Time:** Syncs automatically with NTP servers (pool.ntp.org).
-* **Web Dashboard:** Configure settings from your phone or PC browser (no recoding needed!).
-    * Set Brightness (0-15).
-    * Toggle 12/24 Hour format.
-    * Select Time Zone (Presets for India, US, UK, etc.).
-* **Visual Effects:**
-    * "Slot Machine" scroll animation for Seconds.
-    * Clean, readable system font.
-* **OTA Updates:** Automatically checks this GitHub repository for updates and installs them.
-* **Persistent Memory:** Settings are saved to EEPROM (Power-off protection).
-* **Wi-Fi Manager:** Connects to known Wi-Fi or creates a Hotspot ("MatrixClock") for initial setup.
+  * **Internet Time:** Automatically syncs with NTP servers for perfect accuracy.
+  * **Web Config Portal:** Easily configure WiFi, brightness, time zone, and 24h/12h format from your phone or PC.
+  * **Dual-Zone Layout:** Optimized display with hours/minutes on the left and seconds on the right for a tight, seamless look.
+  * **OTA Updates:** Update firmware wirelessly via a GitHub repository.
+  * **WiFi Manager:** No hardcoding WiFi credentials; connects to a captive portal for easy setup.
+  * **Clean Look:** Uses the system font with optimized spacing to fit HH MM SS on a 32-pixel wide display.
 
-## 🛠️ Hardware Required
+## 🛠️ Hardware Requirements
 
-1.  **ESP8266 NodeMCU** (or Wemos D1 Mini)
-2.  **MAX7219 LED Dot Matrix Module** (4-in-1 FC-16 type)
-3.  Jumper Wires (Female-to-Female)
-4.  Micro-USB Cable
+  * **ESP8266 Board:** NodeMCU v2 (or Wemos D1 Mini)
+  * **Display:** MAX7219 Dot Matrix Module (4-in-1 FC-16 Hardware)
+  * **Power:** Micro-USB cable and 5V power source.
+  * **Wires:** Female-to-Female jumper wires.
 
-## 🔌 Wiring
+### Wiring Diagram
 
-| NodeMCU (ESP8266) | MAX7219 Matrix |
+| MAX7219 Pin | NodeMCU (ESP8266) Pin |
 | :--- | :--- |
-| **3V3** (or Vin) | VCC |
-| **GND** | GND |
-| **D7** (GPIO 13) | DIN (Data In) |
-| **D4** (GPIO 2) | CS (Chip Select) |
-| **D5** (GPIO 14) | CLK (Clock) |
+| **VCC** | **VV** (or 3V3, but 5V is brighter) |
+| **GND** | **GND** |
+| **DIN** | **D7** (GPIO 13) |
+| **CS** | **D4** (GPIO 2) |
+| **CLK** | **D5** (GPIO 14) |
 
-> **Note:** If your display shows mirrored/garbage text, change `HARDWARE_TYPE` in `main.cpp` from `FC16_HW` to `GENERIC_HW`.
+> **Note:** The `CS` pin is configurable in the code (`#define CS_PIN D4`), but `DIN` and `CLK` are fixed hardware SPI pins on the ESP8266.
 
-## 📦 Libraries Used
+## 📦 Software Installation
 
-Ensure these libraries are installed in PlatformIO (`platformio.ini`) or Arduino IDE:
+### 1\. Prerequisites
 
-* `MD_Parola` (by MajicDesigns)
-* `MD_MAX72XX` (by MajicDesigns)
-* `NTPClient` (by Fabrice Weinberg)
-* `WiFiManager` (by tzapu)
-* `ESP8266WiFi` (Built-in)
-* `ESP8266WebServer` (Built-in)
-* `EEPROM` (Built-in)
+  * **VS Code** with **PlatformIO** extension installed.
 
-## ⚙️ Installation & OTA Setup
+### 2\. Project Setup
 
-1.  **Clone the Repo:**
-    ```bash
-    git clone [https://github.com/rohanshirodker/ESP-Clock.git](https://github.com/rohanshirodker/ESP-Clock.git)
-    ```
-2.  **Edit GitHub Links:**
-    Open `main.cpp` and locate:
-    ```cpp
-    const char* URL_VERSION = "[https://raw.githubusercontent.com/YOUR_USER/YOUR_REPO/main/version.txt](https://raw.githubusercontent.com/YOUR_USER/YOUR_REPO/main/version.txt)";
-    const char* URL_FIRMWARE = "[https://raw.githubusercontent.com/YOUR_USER/YOUR_REPO/main/firmware.bin](https://raw.githubusercontent.com/YOUR_USER/YOUR_REPO/main/firmware.bin)";
-    ```
-    Replace these with your **RAW** GitHub file URLs.
+1.  Create a new PlatformIO project for the board **NodeMCU 1.0 (ESP-12E Module)**.
+2.  Open the `platformio.ini` file and paste the following configuration:
 
-3.  **Compile & Upload:**
-    Flash the code to your ESP8266.
+<!-- end list -->
 
-4.  **First Run:**
-    * The clock will display "WiFi".
-    * Connect your phone to the Hotspot named **"MatrixClock"**.
-    * A portal will open. Select your home Wi-Fi and enter the password.
+```ini
+[env:nodemcuv2]
+platform = espressif8266
+board = nodemcuv2
+framework = arduino
+upload_speed = 921600
+monitor_speed = 115200
 
-5.  **Access Settings:**
-    * Once connected, the clock briefly shows the last digit of its IP address (e.g., `.45`).
-    * Open a browser and go to `http://192.168.X.45` (replace with actual IP).
-    * Adjust Brightness, Time Zone, and Format. Click **Save**.
+lib_deps =
+    majicdesigns/MD_MAX72XX @ ^3.3.1
+    majicdesigns/MD_Parola @ ^3.7.1
+    ropg/ezTime @ ^0.8.3
+    tzapu/WiFiManager @ ^0.16.0
+    bblanchon/ArduinoJson @ ^6.21.3
+```
 
-## 🚀 How to Push an OTA Update
+3.  Copy the provided `main.cpp` code into your project's `src/main.cpp` file.
 
-To update clocks remotely without plugging them in:
+### 3\. OTA Configuration (Optional)
 
-1.  Increase the `#define CURRENT_VERSION "1.3"` in your code (e.g., to "1.4").
-2.  Compile the code to generate a binary file (`firmware.bin`).
-    * *PlatformIO:* `.pio/build/nodemcuv2/firmware.bin`
-    * *Arduino:* Sketch -> Export Compiled Binary.
-3.  Update the `version.txt` file in your repo to match the new number ("1.4").
-4.  Commit and Push both `firmware.bin` and `version.txt` to GitHub.
-5.  Restart the clock. It will see the new version and update itself!
+To enable wireless updates, edit the lines at the top of `main.cpp` with your own GitHub repository links:
 
-## ⚠️ Troubleshooting
+```cpp
+#define CURRENT_VERSION "1.4"
+const char* URL_VERSION = "https://raw.githubusercontent.com/YOUR_USER/REPO/main/version.txt";
+const char* URL_FIRMWARE = "https://raw.githubusercontent.com/YOUR_USER/REPO/main/firmware.bin";
+```
 
-* **Gibberish Text?**
-    Go to `main.cpp` and change:
-    `#define HARDWARE_TYPE MD_MAX72XX::FC16_HW`
-    to
-    `#define HARDWARE_TYPE MD_MAX72XX::GENERIC_HW`
+### 4\. Flash Filesystem
 
-* **Settings Wiped after Update?**
-    Do not change the order of variables in the `struct Settings` in the code. New variables must be added at the end.
+This project uses `LittleFS` to save your settings.
 
----
-**Current Version:** 1.3
+1.  In VS Code, click the **PlatformIO Alien Icon**.
+2.  Go to **Project Tasks** -\> **nodemcuv2** -\> **Platform**.
+3.  Click **Build Filesystem Image** and then **Upload Filesystem Image**.
+
+### 5\. Upload Code
+
+1.  Connect your ESP8266 via USB.
+2.  Click the **Arrow Icon (→)** in the bottom bar to build and upload the firmware.
+
+## 📱 How to Use
+
+### First Time Setup
+
+1.  Power on the clock. It will display **"WiFi..."**.
+2.  On your phone or PC, look for a WiFi network named **"SmartClock"**. Connect to it.
+3.  A captive portal should open automatically (or go to `192.168.4.1`).
+4.  Select your home WiFi network and enter the password.
+5.  The clock will save, reboot, and display the time.
+
+### Changing Settings
+
+1.  Find the IP address of your clock (check your router, or look at the Serial Monitor during boot).
+2.  Open that IP address in a web browser (e.g., `http://192.168.1.50`).
+3.  You can adjust:
+      * **Brightness:** Slider from 0 to 15.
+      * **Time Zone:** Select your region.
+      * **Format:** Toggle 12h / 24h.
+
+## ❓ Troubleshooting
+
+**Display shows garbage or random dots?**
+
+  * This is usually a hardware type mismatch.
+  * In `main.cpp`, try changing `HARDWARE_TYPE` to `MD_MAX72XX::GENERIC_HW` or `MD_MAX72XX::ICSTATION_HW`.
+  * Ensure your `DIN` is connected to `D7` and `CLK` to `D5`.
+
+**Display is upside down or mirrored?**
+
+  * You may need to rotate the display in software or physically flip the modules.
+  * If using `GENERIC_HW`, you often need to rotate the modules 90 degrees physically or adjust the library transform.
+
+**Stuck on "WiFi..."?**
+
+  * The ESP cannot connect to the saved network.
+  * It will eventually timeout and restart the Access Point "SmartClock" so you can re-enter credentials.
